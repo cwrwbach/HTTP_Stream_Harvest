@@ -1,17 +1,44 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
-#include<sys/socket.h>
-#include<arpa/inet.h>
-#include<unistd.h>
-#include<signal.h>
-#include<unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <signal.h>
+#include <unistd.h>
+
+#include <netinet/in.h>
+
+#include <netdb.h>
+
 
 //https://aticleworld.com/socket-programming-in-c-using-tcpip/
 //"23.111.178.66" 11392 //Costa Rica
 
+
+
+//https://curl.se/libcurl/c/curl_easy_setopt.html
+//https://thecodeartist.blogspot.com/2013/02/shoutcast-internet-radio-protocol.html
+// The Curl API: https://curl.se/libcurl/c/
+
+
+//Some URLS:
+//curl_easy_setopt(curl_handle, CURLOPT_URL, "http://media-ice.musicradio.com:80/ClassicFMMP3");
+//curl_easy_setopt(curl_handle, CURLOPT_URL, "http://media-the.musicradio.com/ClassicFM-M-Relax");
+//curl_easy_setopt(curl_handle, CURLOPT_URL, "http://s1.voscast.com:11392/stream");
+//curl_easy_setopt(curl_handle, CURLOPT_URL, "http://cast1.torontocast.com:1950/stream");
+
+//"http://icecast.thisisdax.com/SmoothUKMP3"
+
+//https://gist.github.com/niko/2a1d7b2d109ebe7f7ca2f860c3505ef0
+
+
+
+
 FILE * fd;
+struct hostent *host;
 int hSocket;
+char host_url[256];
 
 #define MAX_HEADER_LEN 8192
 
@@ -44,7 +71,14 @@ int iRetval=-1;
 int ServerPort = 11392 ; //90190;
 struct sockaddr_in remote= {0};
 
-remote.sin_addr.s_addr = inet_addr("23.111.178.66"); //Costa Rica
+//remote.sin_addr.s_addr = inet_addr("23.111.178.66"); //Costa Rica
+
+//remote.sin_addr.s_addr = inet_addr("23.111.178.66"); //Costa Rica
+
+remote.sin_addr.s_addr = inet_addr(inet_ntoa (*(struct in_addr*)host->h_addr)); //Costa Rica
+
+
+
 
 remote.sin_family = AF_INET;
 remote.sin_port = htons(ServerPort);
@@ -99,7 +133,7 @@ char getrequest[4096];
 
 
   if (signal(SIGINT, sig_handler) == SIG_ERR)
-  printf("\ncan't catch SIGINT\n");
+  printf("\nCan't catch SIGINT\n");
 
 
 
@@ -109,6 +143,14 @@ fd = fopen("fred.mp3","w");
 printf(" fopen = %d \n",fd);
 
 //home crafted HTTP GET with forced variables FIXME TODO etc
+
+strcpy(host_url,"s1.voscast.com");
+
+host = gethostbyname(host_url);
+
+printf("\nIP address of %s is: ", host->h_name );
+printf("%s\n\n",inet_ntoa (*(struct in_addr*)host->h_addr));
+
 
 char * myurl = "/stream";
 char * useragent= "Streamripper/1.x";
