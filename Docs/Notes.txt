@@ -1,0 +1,30 @@
+
+MetaData:
+http://wiki.shoutcast.com/wiki/SHOUTcast_XML_Metadata_Specification
+
+//Some URLS:
+//curl_easy_setopt(curl_handle, CURLOPT_URL, "http://media-ice.musicradio.com:80/ClassicFMMP3");
+//curl_easy_setopt(curl_handle, CURLOPT_URL, "http://media-the.musicradio.com/ClassicFM-M-Relax");
+//curl_easy_setopt(curl_handle, CURLOPT_URL, "http://s1.voscast.com:11392/stream");
+//curl_easy_setopt(curl_handle, CURLOPT_URL, "http://cast1.torontocast.com:1950/stream");
+
+
+http://wiki.shoutcast.com/wiki/SHOUTcast_XML_Metadata_Specification
+
+Maybe handy info (LISP)
+https://gigamonkeys.com/book/
+
+Could be good uses http GET...
+https://people.kth.se/~johanmon/dse/casty.pdf
+
+HTTP GET Stuff:
+https://stackoverflow.com/questions/11208299/how-to-make-an-http-get-request-in-c-without-libcurl
+
+https://github.com/iliasam/WIFI_RADIO/blob/master/src/wifi_module.c
+
+
+Possibly...:
+
+https://stackoverflow.com/questions/67176164/curl-and-my-little-http-client-give-different-results
+
+https://github.com/langhai/http-client-c/tree/master
