@@ -11,16 +11,12 @@
 
 #include <netdb.h>
 
-
 //https://aticleworld.com/socket-programming-in-c-using-tcpip/
 //"23.111.178.66" 11392 //Costa Rica
-
-
 
 //https://curl.se/libcurl/c/curl_easy_setopt.html
 //https://thecodeartist.blogspot.com/2013/02/shoutcast-internet-radio-protocol.html
 // The Curl API: https://curl.se/libcurl/c/
-
 
 //Some URLS:
 //curl_easy_setopt(curl_handle, CURLOPT_URL, "http://media-ice.musicradio.com:80/ClassicFMMP3");
@@ -32,8 +28,9 @@
 
 //https://gist.github.com/niko/2a1d7b2d109ebe7f7ca2f860c3505ef0
 
+//./streamripper "http://s1.voscast.com:11392/stream" //works
 
-
+//===========================================================
 
 FILE * fd;
 struct hostent *host;
@@ -41,7 +38,6 @@ int hSocket;
 char host_url[256];
 
 #define MAX_HEADER_LEN 8192
-
 
 void sig_handler(int signo)
 {
@@ -64,21 +60,17 @@ hSocket = socket(AF_INET, SOCK_STREAM, 0);
 return hSocket;
 }
 
-//try to connect with server
+//Connect with server
 int SocketConnect(int hSocket)
 {
 int iRetval=-1;
-int ServerPort = 11392 ; //90190;
+int ServerPort = 80 ; //90190; //FIXME FIXI GOOF AND PROPPER
 struct sockaddr_in remote= {0};
 
 //remote.sin_addr.s_addr = inet_addr("23.111.178.66"); //Costa Rica
-
-//remote.sin_addr.s_addr = inet_addr("23.111.178.66"); //Costa Rica
+//remote.sin_addr.s_addr = inet_addr("81.20.48.165"); //Classic
 
 remote.sin_addr.s_addr = inet_addr(inet_ntoa (*(struct in_addr*)host->h_addr)); //Costa Rica
-
-
-
 
 remote.sin_family = AF_INET;
 remote.sin_port = htons(ServerPort);
@@ -132,10 +124,8 @@ char server_reply[4096] = {0};
 char getrequest[4096];
 
 
-  if (signal(SIGINT, sig_handler) == SIG_ERR)
+if (signal(SIGINT, sig_handler) == SIG_ERR)
   printf("\nCan't catch SIGINT\n");
-
-
 
 for(int n=0;n<4096;n++) getrequest[n]=0;
 
@@ -144,18 +134,23 @@ printf(" fopen = %d \n",fd);
 
 //home crafted HTTP GET with forced variables FIXME TODO etc
 
-strcpy(host_url,"s1.voscast.com");
+//strcpy(host_url,"s1.voscast.com");
+strcpy(host_url,"media-ice.musicradio.com");
 
 host = gethostbyname(host_url);
 
 printf("\nIP address of %s is: ", host->h_name );
 printf("%s\n\n",inet_ntoa (*(struct in_addr*)host->h_addr));
 
-
-char * myurl = "/stream";
+char * myurl = "/ClassicFMMP3";
 char * useragent= "Streamripper/1.x";
-char * myhost = "s1.voscast.com";
-int myport = 11392;
+char * myhost = "media-ice.musicradio.com";
+int myport = 80 ;
+
+//char * myurl = "/stream";
+//char * useragent= "Streamripper/1.x";
+//char * myhost = "s1.voscast.com";
+//int myport = 11392;
 
 // This is the header suggested Florian Stoehr 
 sprintf(
@@ -181,6 +176,7 @@ if(hSocket == -1)
     return 1;
     }
 printf("Socket is created\n");
+
 //Connect to remote server
 if (SocketConnect(hSocket) < 0)
     {

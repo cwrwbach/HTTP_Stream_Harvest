@@ -8,7 +8,6 @@ http://wiki.shoutcast.com/wiki/SHOUTcast_XML_Metadata_Specification
 //curl_easy_setopt(curl_handle, CURLOPT_URL, "http://s1.voscast.com:11392/stream");
 //curl_easy_setopt(curl_handle, CURLOPT_URL, "http://cast1.torontocast.com:1950/stream");
 
-
 http://wiki.shoutcast.com/wiki/SHOUTcast_XML_Metadata_Specification
 
 Maybe handy info (LISP)
