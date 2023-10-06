@@ -32,6 +32,12 @@
 
 //./streamripper "http://s1.voscast.com:11392/stream" //works
 
+//LIB-ao information
+
+//LIB mpg123 information
+//maybe this does not realy need lib0ao?
+//https://www.mpg123.de/index.shtml
+
 //===========================================================
 
 FILE * fd;
@@ -45,9 +51,6 @@ ao_device *dev = NULL;
 
 
 char audio_buffer[16384];
-
-
-
 
 
 #define MAX_HEADER_LEN 8192
@@ -136,87 +139,6 @@ if(setsockopt(hSocket, SOL_SOCKET, SO_RCVTIMEO,(char *)&tv,sizeof(tv)) < 0)
 shortRetval = recv(hSocket, Rsp, MAX_HEADER_LEN, 0);
 return shortRetval;
 }
-
-//---
-
-
-#if 1
-size_t play_stream(void *buffer, size_t size, size_t nmemb, void *userp)
-{
-    int err;
-    off_t frame_offset;
-    unsigned char *audio;
-    size_t done;
-    ao_sample_format format;
-    int channels, encoding;
-    long rate;
-
-    mpg123_feed(mh, (const unsigned char*) buffer, size * nmemb);
-    do 
-        {
-        err = mpg123_decode_frame(mh, &frame_offset, &audio, &done);
-        switch(err) 
-            {
-            case MPG123_NEW_FORMAT:
-                mpg123_getformat(mh, &rate, &channels, &encoding);
-                format.bits = mpg123_encsize(encoding) * BITS;
-                format.rate = rate;
-                format.channels = channels;
-                format.byte_format = AO_FMT_NATIVE;
-                format.matrix = 0;
-                dev = ao_open_live(ao_default_driver_id(), &format, NULL);
-                break;
-            case MPG123_OK:
-                ao_play(dev, audio, done);
-                break;
-            case MPG123_NEED_MORE:
-                break;
-            default:
-                break;
-            }
-    } while(done > 0);
-
-    return size * nmemb;
-}
-
-#endif
-
-
-
-//---
-#if 0
-void setup_audio()
-{
-    ao_initialize();  //sound card access
-    
-    mpg123_init();
-    mh = mpg123_new(NULL, NULL);
-    mpg123_open_feed(mh);
-
-//    CURL *curl = curl_easy_init();
-//    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, play_stream); //specifies the Callback function
-
-   // curl_easy_setopt(curl, CURLOPT_URL, argv[1]);
-//    curl_easy_setopt(curl, CURLOPT_URL, carsick);
-
-//curl_easy_setopt(curl,CURLOPT_HEADER,1);
-//curl_easy_setopt(curl,CURLOPT_READDATA,"FRED");
-//curl_easy_setopt(curl,CURLOPT_VERBOSE,1);
-
-
-//main loop in by-yer
-//    curl_easy_perform(curl);
-//    curl_easy_cleanup(curl);
-
-    mpg123_close(mh);
-    mpg123_delete(mh);
-    mpg123_exit();
-
-    ao_close(dev);
-    ao_shutdown();
-
-}
-#endif
 
 //---
 
