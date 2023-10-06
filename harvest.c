@@ -61,10 +61,21 @@ void sig_handler(int signo)
 {
 if (signo == SIGINT)
     printf("received SIGINT\n");
+
+printf("Closing socket \n");
 close(hSocket);
 shutdown(hSocket,0);
 shutdown(hSocket,1);
 shutdown(hSocket,2);
+printf("Closing mpg123 \n");
+
+ mpg123_close(mh);
+    mpg123_delete(mh);
+    mpg123_exit();
+printf("Closing AO \n");
+    ao_close(dev);
+    ao_shutdown();
+
 printf(" QUAT ! \n");
 exit(-1);
 }
@@ -265,11 +276,9 @@ if((server_reply[nx  ] == 0x0d ) && (server_reply[nx+1] == 0x0a ) &&
     }
 printf(" nx: %d read_sz %d \n",nx,read_size);
 
+//this 
 //read_size = recv(hSocket,server_reply,2048,0);
-
-
 //fwrite(server_reply+nx,1,read_size-nx,fd); //start after header, save remainder
-
 //fwrite(server_reply,1,read_size,fd); //start after header, save remainder
 
 
@@ -286,77 +295,50 @@ int qq = 42;
 int size;
 int nmemb;
 
-while(1)
-{
+while(1) //for evah and evah
+    {
+    nmemb=1; //what meaneth this?
+    size = recv(hSocket,audio_buffer, nx, 0);
 
-/*
-    read_size = recv(hSocket,server_reply, nx, 0);
-    nx -=read_size;
-    if(read_size <1)
-        {
-        printf("done 8k %d \n",nx);
-        nx=8000;
-        }
-    printf(" rsz = %d nx = %d \n",nx);   
-fwrite(server_reply,1,read_size,audio_buffer);
-*/
+//this is where the meta-data extraction should take place.
 
-nmemb=1;
-size = recv(hSocket,audio_buffer, nx, 0);
+    mpg123_feed(mh, (const unsigned char*) audio_buffer, size * nmemb);
 
-   mpg123_feed(mh, (const unsigned char*) audio_buffer, size * nmemb);
     do 
         {
         err = mpg123_decode_frame(mh, &frame_offset, &audio, &done);
         switch(err) 
             {
             case MPG123_NEW_FORMAT:
-                mpg123_getformat(mh, &rate, &channels, &encoding);
-                format.bits = mpg123_encsize(encoding) * BITS;
-                format.rate = rate;
-                format.channels = channels;
-                format.byte_format = AO_FMT_NATIVE;
-                format.matrix = 0;
-                dev = ao_open_live(ao_default_driver_id(), &format, NULL);
-                break;
+            mpg123_getformat(mh, &rate, &channels, &encoding);
+            format.bits = mpg123_encsize(encoding) * BITS;
+            format.rate = rate;
+            format.channels = channels;
+            format.byte_format = AO_FMT_NATIVE;
+            format.matrix = 0;
+            dev = ao_open_live(ao_default_driver_id(), &format, NULL);
+            break;
+
             case MPG123_OK:
-                ao_play(dev, audio, done);
-                break;
+            ao_play(dev, audio, done);
+            break;
+
             case MPG123_NEED_MORE:
-                break;
+            break;
             default:
-                break;
+            break;
             }
-    } while(done > 0);
+        } while(done > 0);
+    } //while for evah
 
-}
-
-
-
-while(0)
-    {
-    read_size = recv(hSocket,server_reply, nx, 0);
-    nx -=read_size;
-    if(read_size <1)
-        {
-        printf("done 8k %d \n",nx);
-        nx=8000;
-        }
-    printf(" rsz = %d nx = %d \n",nx);    
-fwrite(server_reply,1,read_size,stdout);
-  //  fwrite(server_reply,1,read_size,fd);
-    }
-
-//fwrite(server_reply,1,8000,fd);
 printf(" ALL DONE 8k\n");
 
+mpg123_close(mh);
+mpg123_delete(mh);
+mpg123_exit();
 
- mpg123_close(mh);
-    mpg123_delete(mh);
-    mpg123_exit();
-
-    ao_close(dev);
-    ao_shutdown();
+ao_close(dev);
+ao_shutdown();
 
 close(hSocket);
 shutdown(hSocket,0);
