@@ -302,18 +302,31 @@ int spin;
 
 int abx =0;
 
+int grand_total = 0;
+
 while(1) //for evah and evah
     {
     nmemb=1; //what meaneth this?
     
-    while(abx < 30000)
+    while(abx < 32000)
         {
         size = recv(hSocket,stream_buffer, 1, 0);
 
-        if((stream_buffer[0] =='r' ) && (audio_buffer[abx-1] == 't' ) && (audio_buffer[abx-2] == 'S' ))
+        if((stream_buffer[0] =='e' ) && (audio_buffer[abx-1] == 'r' ) && (audio_buffer[abx-2] == 't' )
+        && (audio_buffer[abx-3]=='S'))
+            
+
+    //    if((stream_buffer[10] =='e' ) && (stream_buffer[9] == 'r' ) && (stream_buffer[8] == 't' )
+    //    && (stream_buffer[7]=='S'))
+            
+
+
+
+
             {
           //  printf("ABX: %d %x\n",abx,audio_buffer[abx-3]);
-            aaa= audio_buffer[abx-3]; //gets the meta length /16
+            aaa= audio_buffer[abx-4]; //gets the meta length /16
+         //   aaa= audio_buffer[6]; //gets the meta length /16
             spin = aaa *16; 
             printf("abx=%d, spin=%d \n",abx,spin);
             for(int i = 0; i<spin+1;i++) //the plus 1 sseems correct
@@ -327,10 +340,10 @@ while(1) //for evah and evah
 
         audio_buffer[abx++] = stream_buffer[0];
         }
-if(abx != 30000) 
+if(abx != 32000) 
     printf("total abx: %d \n",abx);   
 
-    mpg123_feed(mh, (const unsigned char*) audio_buffer, 30000 * nmemb);
+    mpg123_feed(mh, (const unsigned char*) audio_buffer, 32000 * nmemb);
     abx=0;
 
     do 
