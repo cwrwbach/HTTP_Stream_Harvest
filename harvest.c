@@ -49,8 +49,8 @@ mpg123_handle *mh = NULL;
 ao_device *dev = NULL;
 
 
-
-char audio_buffer[16384];
+char stream_buffer[32768];
+char audio_buffer[32768];
 
 
 #define MAX_HEADER_LEN 8192
@@ -223,14 +223,13 @@ meta_interval = 8000; //FIXME - should come from header
 //char * myhost = "s1.voscast.com";
 //int myport = 11392;
 
-// This is the header suggested Florian Stoehr 
 sprintf(
         getrequest,
 	     "GET %s HTTP/1.1\r\n"
 	     "Accept: */*\r\n"
 	     "Cache-Control: no-cache\r\n"
 	     "User-Agent: %s\r\n"
-	     "Icy-Metadata: 0\r\n" //make this a 1 to accept meta-data
+	     "Icy-Metadata: 1\r\n" //make this a 1 to accept meta-data
 	     "Connection: close\r\n"
 	     "Host: %s:%d\r\n\r\n",
 	     myurl,
@@ -264,7 +263,7 @@ SocketSend(hSocket,getrequest , strlen(getrequest));
 printf(" Fetching Header \n");
 
 //read_size = SocketReceive(hSocket, server_reply, 4096);
-read_size = recv(hSocket,server_reply,2048,MSG_PEEK);
+read_size = recv(hSocket,server_reply,2048,0); //MSG_PEEK);
 
 for(nx = 0;nx<read_size;nx++)
 if((server_reply[nx  ] == 0x0d ) && (server_reply[nx+1] == 0x0a ) && 
@@ -278,8 +277,8 @@ printf(" nx: %d read_sz %d \n",nx,read_size);
 
 //this 
 //read_size = recv(hSocket,server_reply,2048,0);
-//fwrite(server_reply+nx,1,read_size-nx,fd); //start after header, save remainder
-//fwrite(server_reply,1,read_size,fd); //start after header, save remainder
+fwrite(server_reply+nx,1,read_size-nx,fd); //start after header, save remainder
+fwrite(server_reply,1,read_size,fd); //start after header, save remainder
 
 
 
@@ -294,15 +293,45 @@ int qq = 42;
 
 int size;
 int nmemb;
+int t_count =0;
+int sp,sq;
+char * match;
+char * metadat[2048];
+char aaa;
+int spin;
+
+int abx =0;
 
 while(1) //for evah and evah
     {
     nmemb=1; //what meaneth this?
-    size = recv(hSocket,audio_buffer, nx, 0);
+    
+    while(abx < 30000)
+        {
+        size = recv(hSocket,stream_buffer, 1, 0);
 
-//this is where the meta-data extraction should take place.
+        if((stream_buffer[0] =='r' ) && (audio_buffer[abx-1] == 't' ) && (audio_buffer[abx-2] == 'S' ))
+            {
+          //  printf("ABX: %d %x\n",abx,audio_buffer[abx-3]);
+            aaa= audio_buffer[abx-3]; //gets the meta length /16
+            spin = aaa *16; 
+            printf("abx=%d, spin=%d \n",abx,spin);
+            for(int i = 0; i<spin+1;i++) //the plus 1 sseems correct
+                {
+                recv(hSocket,stream_buffer, 1, 0);
+             //   printf("%c",stream_buffer[0]);
+                }
+          //  printf("\n");
+            spin = 0;
+            }
 
-    mpg123_feed(mh, (const unsigned char*) audio_buffer, size * nmemb);
+        audio_buffer[abx++] = stream_buffer[0];
+        }
+if(abx != 30000) 
+    printf("total abx: %d \n",abx);   
+
+    mpg123_feed(mh, (const unsigned char*) audio_buffer, 30000 * nmemb);
+    abx=0;
 
     do 
         {
@@ -325,6 +354,7 @@ while(1) //for evah and evah
 
             case MPG123_NEED_MORE:
             break;
+
             default:
             break;
             }
@@ -345,7 +375,7 @@ shutdown(hSocket,0);
 shutdown(hSocket,1);
 shutdown(hSocket,2);
 return 0;
-}
- 
+
+} 
 
  
