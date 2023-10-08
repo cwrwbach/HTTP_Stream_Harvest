@@ -51,7 +51,8 @@ ao_device *dev = NULL;
 
 char stream_buffer[32768];
 char audio_buffer[32768];
-
+char meta_buffer[2048];
+char test_buffer[2048];
 
 #define MAX_HEADER_LEN 8192
 #define BITS 8
@@ -167,7 +168,7 @@ char getrequest[4096];
 int nx;
 unsigned int meta_interval;
 unsigned int mp;
-
+//int mp3_tot;
 
 //audio vars
 
@@ -215,7 +216,7 @@ char * myurl = "/ClassicFMMP3";
 char * useragent= "Streamripper/1.x";
 char * myhost = "media-ice.musicradio.com";
 int myport = 80 ;
-
+int eoh;
 meta_interval = 8000; //FIXME - should come from header
 
 //char * myurl = "/stream";
@@ -263,7 +264,7 @@ SocketSend(hSocket,getrequest , strlen(getrequest));
 printf(" Fetching Header \n");
 
 //read_size = SocketReceive(hSocket, server_reply, 4096);
-read_size = recv(hSocket,server_reply,2048,0); //MSG_PEEK);
+read_size = recv(hSocket,server_reply,2048,MSG_PEEK);
 
 for(nx = 0;nx<read_size;nx++)
 if((server_reply[nx  ] == 0x0d ) && (server_reply[nx+1] == 0x0a ) && 
@@ -272,13 +273,21 @@ if((server_reply[nx  ] == 0x0d ) && (server_reply[nx+1] == 0x0a ) &&
     nx+=4;
     strncpy(show_header,server_reply,nx);
     printf("\nHeader:\n%s h-sz %d \n\n",show_header,nx);
-    }
-printf(" nx: %d read_sz %d \n",nx,read_size);
 
-//this 
+    eoh=nx;
+    }
+
+//-
+
+read_size = recv(hSocket,test_buffer,eoh,0); ///nx
+printf(" nx: %d read_sz %d \n",eoh,read_size);
+
+printf("\n TEST \n %s",test_buffer); 
+
+//sleep(100);
 //read_size = recv(hSocket,server_reply,2048,0);
-fwrite(server_reply+nx,1,read_size-nx,fd); //start after header, save remainder
-fwrite(server_reply,1,read_size,fd); //start after header, save remainder
+//fwrite(server_reply+nx,1,read_size-nx,fd); //start after header, save remainder
+//fwrite(server_reply,1,read_size,fd); //start after header, save remainder
 
 
 
@@ -287,7 +296,7 @@ printf("Lupin to rx stream \n");
 //----
 
 
-nx+=8000;
+//nx+=8000;
 mp = 0;
 int qq = 42;
 
@@ -297,31 +306,54 @@ int t_count =0;
 int sp,sq;
 char * match;
 char * metadat[2048];
-char aaa;
+unsigned char aaa;
 int spin;
 
 int abx =0;
-
+int mp3_int;
 int grand_total = 0;
-
+int first =1;
 while(1) //for evah and evah
     {
     nmemb=1; //what meaneth this?
-    
+//-- alt method 2
+
+
+  
+
+//  printf(" %d\n",__LINE__);
+
+
+  mp3_int = 8000;
+  
+    do 
+    {
+    size = recv(hSocket,stream_buffer, mp3_int, 0);
+    mp3_int -=size;
+    printf("mp3int %d: \n",mp3_int);
+    memcpy(audio_buffer,stream_buffer,size);
+    }
+    while (mp3_int > 0);
+
+//now get meta-data
+
+  recv(hSocket,&aaa,1, 0);
+    printf("AAA %d\n",aaa);   
+    spin = (int) (aaa*16) ;
+    printf("Len %d Spin %d \n",aaa,spin);  
+  //  size = recv(hSocket,stream_buffer,spin, 0);
+    size = recv(hSocket,meta_buffer,spin, 0);
+  printf("SPIN %d ... %d\n",spin);
+  //  memcpy(meta_buffer,stream_buffer,spin);
+
+printf(">%s ",meta_buffer);
+/* method 1   
     while(abx < 32000)
         {
         size = recv(hSocket,stream_buffer, 1, 0);
 
         if((stream_buffer[0] =='e' ) && (audio_buffer[abx-1] == 'r' ) && (audio_buffer[abx-2] == 't' )
         && (audio_buffer[abx-3]=='S'))
-            
-
-    //    if((stream_buffer[10] =='e' ) && (stream_buffer[9] == 'r' ) && (stream_buffer[8] == 't' )
-    //    && (stream_buffer[7]=='S'))
-            
-
-
-
 
             {
           //  printf("ABX: %d %x\n",abx,audio_buffer[abx-3]);
@@ -340,10 +372,15 @@ while(1) //for evah and evah
 
         audio_buffer[abx++] = stream_buffer[0];
         }
-if(abx != 32000) 
-    printf("total abx: %d \n",abx);   
+*/ 
+//end alt method 1
 
-    mpg123_feed(mh, (const unsigned char*) audio_buffer, 32000 * nmemb);
+
+
+
+
+
+    mpg123_feed(mh, (const unsigned char*) audio_buffer, 8000 * nmemb);
     abx=0;
 
     do 
