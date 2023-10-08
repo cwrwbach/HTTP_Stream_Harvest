@@ -70,12 +70,12 @@ shutdown(hSocket,1);
 shutdown(hSocket,2);
 printf("Closing mpg123 \n");
 
- mpg123_close(mh);
-    mpg123_delete(mh);
-    mpg123_exit();
+mpg123_close(mh);
+mpg123_delete(mh);
+mpg123_exit();
 printf("Closing AO \n");
-    ao_close(dev);
-    ao_shutdown();
+ao_close(dev);
+ao_shutdown();
 
 printf(" QUAT ! \n");
 exit(-1);
@@ -101,15 +101,6 @@ struct sockaddr_in remote= {0};
 //remote.sin_addr.s_addr = inet_addr("81.20.48.165"); //Classic
 
 remote.sin_addr.s_addr = inet_addr(inet_ntoa (*(struct in_addr*)host->h_addr)); //Costa Rica
-
-/*
-//just me being silly - don't work yet anyway"
-int temp  = (host->h_addr[0] <<24) | (host->h_addr[1] <<16)
-                           | (host->h_addr[2] <<8) | (host->h_addr[3]);
-
-printf (">> temp %d \n",temp);
-remote.sin_addr.s_addr = temp;
-*/
 
 remote.sin_family = AF_INET;
 remote.sin_port = htons(ServerPort);
@@ -158,17 +149,12 @@ int main(int argc, char *argv[])
 {
 int read_size;
 struct sockaddr_in server;
-char SendToServer[100] = {0};
 char server_reply[16384] = {0};
 char show_header[2048] = {0};
-char show_meta[2048] = {0};
-char save_mp3[2048] = {0};
 
 char getrequest[4096];
 int nx;
 unsigned int meta_interval;
-unsigned int mp;
-//int mp3_tot;
 
 //audio vars
 
@@ -194,14 +180,6 @@ mpg123_init();
 mh = mpg123_new(NULL, NULL);
 mpg123_open_feed(mh);
 
-
-
-
-for(int n=0;n<4096;n++) getrequest[n]=0;
-
-fd = fopen("fred.mp3","w");
-printf(" fopen = %d \n",fd);
-
 //home crafted HTTP GET with forced variables FIXME TODO etc
 
 //strcpy(host_url,"s1.voscast.com");
@@ -216,7 +194,7 @@ char * myurl = "/ClassicFMMP3";
 char * useragent= "Streamripper/1.x";
 char * myhost = "media-ice.musicradio.com";
 int myport = 80 ;
-int eoh;
+int end_of_header;
 meta_interval = 8000; //FIXME - should come from header
 
 //char * myurl = "/stream";
@@ -263,7 +241,7 @@ SocketSend(hSocket,getrequest , strlen(getrequest));
 
 printf(" Fetching Header \n");
 
-//read_size = SocketReceive(hSocket, server_reply, 4096);
+//First find length of header
 read_size = recv(hSocket,server_reply,2048,MSG_PEEK);
 
 for(nx = 0;nx<read_size;nx++)
@@ -273,59 +251,35 @@ if((server_reply[nx  ] == 0x0d ) && (server_reply[nx+1] == 0x0a ) &&
     nx+=4;
     strncpy(show_header,server_reply,nx);
     printf("\nHeader:\n%s h-sz %d \n\n",show_header,nx);
-
-    eoh=nx;
+    end_of_header=nx;
     }
 
 //-
-
-read_size = recv(hSocket,test_buffer,eoh,0); ///nx
-printf(" nx: %d read_sz %d \n",eoh,read_size);
+//read the header to remove from stream
+read_size = recv(hSocket,test_buffer,end_of_header,0); ///nx
+printf(" nx: %d read_sz %d \n",end_of_header,read_size);
 
 printf("\n TEST \n %s",test_buffer); 
-
-//sleep(100);
-//read_size = recv(hSocket,server_reply,2048,0);
-//fwrite(server_reply+nx,1,read_size-nx,fd); //start after header, save remainder
-//fwrite(server_reply,1,read_size,fd); //start after header, save remainder
-
-
 
 printf("Lupin to rx stream \n");
 
 //----
 
 
-//nx+=8000;
-mp = 0;
-int qq = 42;
-
+//mp = 0;
 int size;
 int nmemb;
-int t_count =0;
-int sp,sq;
-char * match;
-char * metadat[2048];
+
 unsigned char aaa;
 int spin;
-
-int abx =0;
 int mp3_int;
-int grand_total = 0;
-int first =1;
+
 while(1) //for evah and evah
     {
     nmemb=1; //what meaneth this?
-//-- alt method 2
+    mp3_int = 8000;
 
-
-  
-
-//  printf(" %d\n",__LINE__);
-
-
-  mp3_int = 8000;
-  
+//Get complete MP3 frame  
     do 
     {
     size = recv(hSocket,stream_buffer, mp3_int, 0);
@@ -336,52 +290,15 @@ while(1) //for evah and evah
     while (mp3_int > 0);
 
 //now get meta-data
-
-  recv(hSocket,&aaa,1, 0);
-    printf("AAA %d\n",aaa);   
+    recv(hSocket,&aaa,1, 0); //one byte for metadata length (/16)
+    printf("Size of meta(\16) %d\n",aaa);   
     spin = (int) (aaa*16) ;
-    printf("Len %d Spin %d \n",aaa,spin);  
-  //  size = recv(hSocket,stream_buffer,spin, 0);
+    printf("Length of metadata: %d\n",spin);  
     size = recv(hSocket,meta_buffer,spin, 0);
-  printf("SPIN %d ... %d\n",spin);
-  //  memcpy(meta_buffer,stream_buffer,spin);
+    printf(">%s ",meta_buffer);
 
-printf(">%s ",meta_buffer);
-/* method 1   
-    while(abx < 32000)
-        {
-        size = recv(hSocket,stream_buffer, 1, 0);
-
-        if((stream_buffer[0] =='e' ) && (audio_buffer[abx-1] == 'r' ) && (audio_buffer[abx-2] == 't' )
-        && (audio_buffer[abx-3]=='S'))
-
-            {
-          //  printf("ABX: %d %x\n",abx,audio_buffer[abx-3]);
-            aaa= audio_buffer[abx-4]; //gets the meta length /16
-         //   aaa= audio_buffer[6]; //gets the meta length /16
-            spin = aaa *16; 
-            printf("abx=%d, spin=%d \n",abx,spin);
-            for(int i = 0; i<spin+1;i++) //the plus 1 sseems correct
-                {
-                recv(hSocket,stream_buffer, 1, 0);
-             //   printf("%c",stream_buffer[0]);
-                }
-          //  printf("\n");
-            spin = 0;
-            }
-
-        audio_buffer[abx++] = stream_buffer[0];
-        }
-*/ 
-//end alt method 1
-
-
-
-
-
-
+// send to decoder
     mpg123_feed(mh, (const unsigned char*) audio_buffer, 8000 * nmemb);
-    abx=0;
 
     do 
         {
