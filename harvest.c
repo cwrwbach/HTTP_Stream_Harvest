@@ -48,7 +48,6 @@ char host_url[256];
 mpg123_handle *mh = NULL;
 ao_device *dev = NULL;
 
-
 char stream_buffer[32768];
 char audio_buffer[32768];
 char meta_buffer[2048];
@@ -73,9 +72,10 @@ printf("Closing mpg123 \n");
 mpg123_close(mh);
 mpg123_delete(mh);
 mpg123_exit();
-printf("Closing AO \n");
-ao_close(dev);
-ao_shutdown();
+
+printf("NOT Closing AO - doesnt like it ? \n");
+//ao_close(dev);
+//ao_shutdown();
 
 printf(" QUAT ! \n");
 exit(-1);
@@ -126,8 +126,8 @@ shortRetval = send(hSocket, Rqst, lenRqst, 0);
 return shortRetval;
 }
 
-//receive the data from the server
-int SocketReceive(int hSocket,char* Rsp,short RvcSize)
+//receive the data from the server this AINT USED !!!
+int xxSocketReceive(int hSocket,char* Rsp,short RvcSize)
 {
 int shortRetval = -1;
 struct timeval tv;
@@ -151,30 +151,24 @@ int read_size;
 struct sockaddr_in server;
 char server_reply[16384] = {0};
 char show_header[2048] = {0};
-
 char getrequest[4096];
 int nx;
 unsigned int meta_interval;
 
 //audio vars
-
-  int err;
-    off_t frame_offset;
-    unsigned char *audio;
-    size_t done;
-    ao_sample_format format;
-    int channels, encoding;
-    long rate;
-
-//endaudio vard
-
-
-
+int err;
+off_t frame_offset;
+unsigned char *audio;
+size_t done;
+ao_sample_format format;
+int channels, encoding;
+long rate;
 
 if (signal(SIGINT, sig_handler) == SIG_ERR)
   printf("\nCan't catch SIGINT\n");
 
-   ao_initialize();  //sound card access
+//sound card access
+ao_initialize();  
     
 mpg123_init();
 mh = mpg123_new(NULL, NULL);
@@ -254,19 +248,16 @@ if((server_reply[nx  ] == 0x0d ) && (server_reply[nx+1] == 0x0a ) &&
     end_of_header=nx;
     }
 
-//-
 //read the header to remove from stream
 read_size = recv(hSocket,test_buffer,end_of_header,0); ///nx
 printf(" nx: %d read_sz %d \n",end_of_header,read_size);
 
 printf("\n TEST \n %s",test_buffer); 
 
-printf("Lupin to rx stream \n");
+printf("NOW Lupin to rx stream \n");
 
 //----
 
-
-//mp = 0;
 int size;
 int nmemb;
 
@@ -295,7 +286,7 @@ while(1) //for evah and evah
     spin = (int) (aaa*16) ;
     printf("Length of metadata: %d\n",spin);  
     size = recv(hSocket,meta_buffer,spin, 0);
-    printf(">%s ",meta_buffer);
+    printf(">%s ",meta_buffer); //print the headers
 
 // send to decoder
     mpg123_feed(mh, (const unsigned char*) audio_buffer, 8000 * nmemb);
