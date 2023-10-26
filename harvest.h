@@ -28,9 +28,9 @@ char myhost[256];
 int myport;
 
 char stream_buffer[32768];
-char audio_buffer[32768];
-char meta_buffer[2048];
-char test_buffer[2048];
+//char audio_buffer[32768];
+//char meta_buffer[2048];
+//char test_buffer[2048];
 char header_buffer[2048];
 
 

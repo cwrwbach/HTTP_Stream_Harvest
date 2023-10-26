@@ -7,7 +7,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
-
+#include <ctype.h>
+#include <string.h>
+#include <inttypes.h>
 
 FILE *logfd;
 #define MAX_HEADER_LEN 2048
@@ -18,6 +20,9 @@ char header_string[MAX_HEADER_LEN];
 
 FILE * f_raw;
 FILE * f_mp3;
+
+unsigned int meta_interval;
+
 
 unsigned int int_len;
 unsigned mp3_base;
@@ -88,9 +93,37 @@ return shortRetval;
 
 int parse_icy_header(char * icy_head)
 {
+char * location;
+printf("\n SCANNING HEADER \n");
 
-printf(" SCANNING \n");
+location = strstr(icy_head,"icy-metaint:");
+meta_interval = 0;
+if(location > 0 ) 
+    {
+    meta_interval = atoi(location+12);
+    printf("Meta interval: %d\n ",meta_interval);
+    }
 
+
+/*
+location = strstr(icy_head,"content-type:");
+if(location > 0 ) 
+    {
+    printf("* %s \n",location);
+    }
+
+location = strstr(icy_head,"icy-br:");
+if(location > 0 ) 
+    {
+    printf("* %s \n",location);
+    }
+
+location = strstr(icy_head,"ice-audio-info:");
+if(location > 0 ) 
+    {
+    printf("+++ %s \n",location);
+    }
+*/
 
 }                    
 
@@ -105,7 +138,7 @@ struct sockaddr_in server;
 //char server_reply[16384] = {0};
 char show_header[2048] = {0};
 char getrequest[4096];
-unsigned int meta_interval;
+
 
 unsigned int fsize,read_size,end_of_header,nx,header_len;
 unsigned char meta_char;
@@ -116,7 +149,12 @@ int count;
 int size;
 int mp3_int;
 
-printf("   --- ICY STREAM HARVESTER ---\n\n");
+printf("\n   --- ICY STREAM HARVESTER ---\n");
+
+
+
+//return (0);
+
 
 count = 0;
 
@@ -139,9 +177,6 @@ host = gethostbyname(host_url);
 
 printf("\nIP address of %s is: ", host->h_name );
 printf("%s\n\n",inet_ntoa (*(struct in_addr*)host->h_addr));
-
-//int end_of_header;
-//meta_interval = METINT; //16000; //8000; //FIXME - should come from header //CHANSEL
 
 sprintf(
         getrequest,
@@ -191,11 +226,9 @@ if((header_buffer[nx  ] == 0x0d ) && (header_buffer[nx+1] == 0x0a ) &&
     nx+=4;
     strncpy(show_header,header_buffer,nx);
     end_of_header=nx;
+    header_len = nx;
+    printf("Header length: %d\n",nx);
     }
-
-//we should obtain these by parsing the header
-header_len = 654;
-meta_interval = 8000; //Should come from header
 
 //clean up the buf
 memset(header_buffer,0,MAX_HEADER_LEN);
@@ -205,13 +238,17 @@ read_size = recv(hSocket,header_buffer,header_len,0);
 
 printf("\nHEADER RESPONSE:\n%s",header_buffer); 
 
+
+parse_icy_header(header_buffer);
+
+
 printf("NOW go Lupin to rx stream \n");
 
 //----
 
 while(1) //Main loop
     {
-    mp3_int = meta_interval; //8000;
+    mp3_int = meta_interval;
 
     do 
         {
@@ -228,23 +265,25 @@ while(1) //Main loop
     meta_len = meta_char *16;
     //printf(" m char: 0x%2.2x m length %d \n",meta_char,meta_len);
    
-    //get the meta-data
-    do
+    //get the meta-data, if any
+    if(meta_interval !=0)
         {
-        size = recv(hSocket,file_buf,meta_len, 0);
-        meta_len -= size;
-        }
-    while (meta_len >0);
+        do
+            {
+            size = recv(hSocket,file_buf,meta_len, 0);
+            meta_len -= size;
+            }
+        while (meta_len >0);
     
-    //just print it for now
-    printf("META-DATA>>>\n %s \n",file_buf);
+        //just print it for now
+        printf("META-DATA>>>\n %s \n",file_buf);
 
-    time++;
-    secs = time/2;
-    mins = secs/60;
-    secs = secs - (mins*60);
-
-    //printf(" %d:%d t: %d\n",mins,secs,time);
+        time++;
+        secs = time/2;
+        mins = secs/60;
+        secs = secs - (mins*60);
+        //printf(" %d:%d t: %d\n",mins,secs,time);
+        }
     } //main loop
 
 printf(" ALL DONE 8k\n");
