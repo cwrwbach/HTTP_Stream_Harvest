@@ -27,29 +27,109 @@ char useragent[256];
 char myhost[256];
 int myport;
 
-
-
-
-
-
-
-
-
-
-mpg123_handle *mh;
-ao_device *dev;
-
 char stream_buffer[32768];
 char audio_buffer[32768];
 char meta_buffer[2048];
 char test_buffer[2048];
+char header_buffer[2048];
 
-#define MAX_HEADER_LEN 8192
+
 #define BITS 8
 
 
+void set_station()
+{
+#define CFM
+//#define RELAX
+//#define VOS
+//#define TORONTO
+//#define SMOOTH
+//#define VIRGIN
+//#define SWISS
+
+#ifdef CFM
+//"http://media-ice.musicradio.com:80/ClassicFMMP3"); >>WORks
+strcpy(host_url,"media-ice.musicradio.com"); 
+strcpy(myurl,"/ClassicFMMP3"); 
+strcpy(useragent,"Streamripper/1.x");
+strcpy(myhost,"media-ice.musicradio.com");
+myport = 80 ;
+#define METINT 8000
+#endif
 
 
+#ifdef RELAX
+//"http://media-the.musicradio.com/ClassicFM-M-Relax");
+//syncs but no AAC audio
+strcpy(host_url,"media-the.musicradio.com"); 
+strcpy(myurl,"/ClassicFM-M-Relax"); 
+strcpy(useragent,"Streamripper/1.x");
+strcpy(myhost,"media-the.musicradio.com");
+myport = 80 ;
+#define METINT 8000
+#endif
+
+
+#ifdef VIRGIN
+
+//https://radio.virginradio.co.uk/stream-chilled
+//WORKS --- NO Metatdata in stream !
+strcpy(host_url,"radio.virginradio.co.uk"); 
+strcpy(myurl,"/stream-chilled"); 
+strcpy(useragent,"Streamripper/1.x");
+strcpy(myhost,"radio.virginradio.co.uk");
+myport = 80 ;
+#define METINT 1024
+#endif
+
+
+#ifdef VOS
+//"http://s1.voscast.com:11392/stream";
+//???
+
+strcpy(host_url,"s1.voscast.com"); 
+strcpy (myurl,"/stream"); 
+strcpy(useragent,"Streamripper/1.x");
+strcpy(myhost,"s1.voscast.com");
+myport = 11392;
+
+#define METINT 6000
+#endif
+
+#ifdef TORONTO
+//"http://cast1.torontocast.com:1950/stream"  //DOES NOT WORK YET
+strcpy(host_url,"cast1.torontocast.com"); 
+strcpy (myurl,"/stream"); 
+strcpy(useragent,"Streamripper/1.x");
+strcpy(myhost,"cast1.torontocast.com");
+myport = 1950;
+
+#define METINT 8000
+#endif
+
+
+
+#ifdef SMOOTH
+//"http://icecast.thisisdax.com/SmoothUKMP3" >>WORKS
+strcpy(host_url,"icecast.thisisdax.com"); 
+strcpy (myurl,"/SmoothUKMP3"); 
+strcpy(useragent,"Streamripper/1.x");
+strcpy(myhost,"icecast.thisisdax.com");
+myport = 80;
+#define METINT 8000
+#endif
+
+
+#ifdef SWISS
+https://stream.srg-ssr.ch/m/rsc_de/mp3_128
+strcpy(host_url,"stream.srg-ssr.ch"); 
+strcpy (myurl,"/m/rsc_de/mp3_128"); 
+strcpy(useragent,"Streamripper/1.x");
+strcpy(myhost,"stream.srg-ssr.ch");
+myport = 80;
+#define METINT 16000
+#endif
+}
 
 
 
