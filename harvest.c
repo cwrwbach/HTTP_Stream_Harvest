@@ -93,35 +93,38 @@ return shortRetval;
 
 int parse_icy_header(char * icy_head)
 {
-char * location;
+char * pos;
+char heading[256];
 printf("\n SCANNING HEADER \n");
 
-location = strstr(icy_head,"icy-metaint:");
+strcpy(heading,"icy-metaint:");
+pos = strstr(icy_head,heading);
+
 meta_interval = 0;
-if(location > 0 ) 
+if(pos > 0 ) 
     {
-    meta_interval = atoi(location+12);
+    meta_interval = atoi(pos+strlen(heading));
     printf("Meta interval: %d\n ",meta_interval);
     }
 
 
 /*
-location = strstr(icy_head,"content-type:");
-if(location > 0 ) 
+pos = strstr(icy_head,"content-type:");
+if(pos > 0 ) 
     {
-    printf("* %s \n",location);
+    printf("* %s \n",pos);
     }
 
-location = strstr(icy_head,"icy-br:");
-if(location > 0 ) 
+pos = strstr(icy_head,"icy-br:");
+if(pos > 0 ) 
     {
-    printf("* %s \n",location);
+    printf("* %s \n",pos);
     }
 
-location = strstr(icy_head,"ice-audio-info:");
-if(location > 0 ) 
+pos = strstr(icy_head,"ice-audio-info:");
+if(pos > 0 ) 
     {
-    printf("+++ %s \n",location);
+    printf("+++ %s \n",pos);
     }
 */
 

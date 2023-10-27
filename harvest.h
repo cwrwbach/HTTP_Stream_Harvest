@@ -39,8 +39,8 @@ char header_buffer[2048];
 
 void set_station()
 {
-#define CFM
-//#define RELAX
+//#define CFM
+#define RELAX
 //#define VOS
 //#define TORONTO
 //#define SMOOTH
