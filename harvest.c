@@ -103,7 +103,7 @@ pos = strstr(icy_head,heading);
 meta_interval = 0;
 if(pos > 0 ) 
     {
-    meta_interval = atoi(pos+strlen
+    meta_interval = atoi(pos+strlen(heading));
     printf("Meta interval: %d\n ",meta_interval);
     }
 
