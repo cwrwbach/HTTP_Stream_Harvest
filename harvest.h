@@ -39,8 +39,8 @@ char header_buffer[2048];
 
 void set_station()
 {
-//#define CFM
-#define RELAX
+#define CFM
+//#define RELAX
 //#define VOS
 //#define TORONTO
 //#define SMOOTH
@@ -54,19 +54,19 @@ strcpy(myurl,"/ClassicFMMP3");
 strcpy(useragent,"Streamripper/1.x");
 strcpy(myhost,"media-ice.musicradio.com");
 myport = 80 ;
-#define METINT 8000
+//#define METINT 8000
 #endif
 
 
 #ifdef RELAX
 //"http://media-the.musicradio.com/ClassicFM-M-Relax");
-//syncs but no AAC audio
+
 strcpy(host_url,"media-the.musicradio.com"); 
 strcpy(myurl,"/ClassicFM-M-Relax"); 
 strcpy(useragent,"Streamripper/1.x");
 strcpy(myhost,"media-the.musicradio.com");
 myport = 80 ;
-#define METINT 8000
+//#define METINT 8000
 #endif
 
 
@@ -79,7 +79,7 @@ strcpy(myurl,"/stream-chilled");
 strcpy(useragent,"Streamripper/1.x");
 strcpy(myhost,"radio.virginradio.co.uk");
 myport = 80 ;
-#define METINT 1024
+//#define METINT 1024
 #endif
 
 
@@ -93,7 +93,7 @@ strcpy(useragent,"Streamripper/1.x");
 strcpy(myhost,"s1.voscast.com");
 myport = 11392;
 
-#define METINT 6000
+//#define METINT 6000
 #endif
 
 #ifdef TORONTO
@@ -104,7 +104,7 @@ strcpy(useragent,"Streamripper/1.x");
 strcpy(myhost,"cast1.torontocast.com");
 myport = 1950;
 
-#define METINT 8000
+//#define METINT 8000
 #endif
 
 
@@ -116,7 +116,7 @@ strcpy (myurl,"/SmoothUKMP3");
 strcpy(useragent,"Streamripper/1.x");
 strcpy(myhost,"icecast.thisisdax.com");
 myport = 80;
-#define METINT 8000
+//#define METINT 8000
 #endif
 
 
@@ -127,7 +127,7 @@ strcpy (myurl,"/m/rsc_de/mp3_128");
 strcpy(useragent,"Streamripper/1.x");
 strcpy(myhost,"stream.srg-ssr.ch");
 myport = 80;
-#define METINT 16000
+//#define METINT 16000
 #endif
 }
 

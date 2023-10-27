@@ -10,6 +10,11 @@
 #include <ctype.h>
 #include <string.h>
 #include <inttypes.h>
+#include <pthread.h>
+#include <vlc/vlc.h>
+//#define MPG
+
+pthread_t go_play;
 
 FILE *logfd;
 #define MAX_HEADER_LEN 2048
@@ -21,12 +26,15 @@ char header_string[MAX_HEADER_LEN];
 FILE * f_raw;
 FILE * f_mp3;
 
+mpg123_handle *mh = NULL;
+ao_device *dev = NULL;
+
 unsigned int meta_interval;
 
 
 unsigned int int_len;
 unsigned mp3_base;
-int time,secs,mins;
+int mytime,secs,mins;
 
 int fifo_d;
 
@@ -131,6 +139,58 @@ if(pos > 0 )
 }                    
 
 
+void * playit(void *go_play)
+{
+FILE * fred;
+
+
+//int main//(int argc, char **argv)
+{
+    libvlc_instance_t *inst;
+    libvlc_media_player_t *mp;
+    libvlc_media_t *m;
+
+    // load the vlc engine
+    inst = libvlc_new(0, NULL);
+
+fred = fopen("my_log,txt","w");
+
+libvlc_log_set_file(inst,fred);
+
+    // create a new item
+  m = libvlc_media_new_path(inst, "/dev/shm/mable");
+
+ // m=libvlc_media_new_location(inst,"http://media-the.musicradio.com/ClassicFM-M-Relax");
+//    m=libvlc_media_new_location(inst,"https://allclassical.streamguys1.com/ac96k");
+    // create a media play playing environment
+    mp = libvlc_media_player_new_from_media(m);
+
+    // no need to keep the media now
+    libvlc_media_release(m);
+
+    // play the media_player
+    libvlc_media_player_play(mp);
+
+        //I want this to go on for evah and evah
+    while(1)
+        sleep(10);
+
+    // stop playing
+    libvlc_media_player_stop(mp);
+
+    // free the media_player
+    libvlc_media_player_release(mp);
+
+    libvlc_release(inst);
+
+
+    return 0;
+}
+
+
+}
+
+
 
 //================================================
 
@@ -152,11 +212,31 @@ int count;
 int size;
 int mp3_int;
 
+
+pthread_create(&go_play, NULL, playit, NULL);
+
+//audio vars
+
+int err;
+    off_t frame_offset;
+    unsigned char *audio;
+    size_t done;
+    ao_sample_format format;
+    int channels, encoding;
+    long rate;
+//end audio vars
+
+
 printf("\n   --- ICY STREAM HARVESTER ---\n");
+execl("ls -l","");
+//execl("../VLC/libvlc/play","");
 
-
-
-//return (0);
+#ifdef MPG
+ao_initialize();  //sound card access
+mpg123_init();
+mh = mpg123_new(NULL, NULL);
+mpg123_open_feed(mh);
+#endif
 
 
 count = 0;
@@ -247,6 +327,7 @@ parse_icy_header(header_buffer);
 
 printf("NOW go Lupin to rx stream \n");
 
+
 //----
 
 while(1) //Main loop
@@ -257,7 +338,45 @@ while(1) //Main loop
         {
         size = recv(hSocket,stream_buffer, mp3_int, 0);
         mp3_int -=size;
+#ifdef MPG
+ mpg123_feed(mh, (const unsigned char*) stream_buffer, size * 1);
+
+
+
+    do 
+        {
+        err = mpg123_decode_frame(mh, &frame_offset, &audio, &done);
+        switch(err) 
+            {
+            case MPG123_NEW_FORMAT:
+            mpg123_getformat(mh, &rate, &channels, &encoding);
+            format.bits = mpg123_encsize(encoding) * BITS;
+            format.rate = rate;
+            format.channels = channels;
+            format.byte_format = AO_FMT_NATIVE;
+            format.matrix = 0;
+            dev = ao_open_live(ao_default_driver_id(), &format, NULL);
+            break;
+
+            case MPG123_OK:
+            ao_play(dev, audio, done);
+            break;
+
+            case MPG123_NEED_MORE:
+            break;
+
+            default:
+            break;
+            }
+        } while(done > 0);
+
+
+
+
+#else
+
         write(fifo_d,stream_buffer,size);
+#endif
        // fwrite(stream_buffer, size, 1, logfd); //logging only
         }
     while (mp3_int > 0);
@@ -281,8 +400,8 @@ while(1) //Main loop
         //just print it for now
         printf("META-DATA>>>\n %s \n",file_buf);
 
-        time++;
-        secs = time/2;
+        mytime++;
+        secs = mytime/2;
         mins = secs/60;
         secs = secs - (mins*60);
         //printf(" %d:%d t: %d\n",mins,secs,time);
