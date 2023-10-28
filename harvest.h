@@ -11,8 +11,6 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
-#include <mpg123.h>
-#include <ao/ao.h>
 
 
 FILE * fd;

@@ -12,31 +12,15 @@
 #include <inttypes.h>
 #include <pthread.h>
 #include <vlc/vlc.h>
-//#define MPG
 
-pthread_t go_play;
-
-FILE *logfd;
 #define MAX_HEADER_LEN 2048
 
-unsigned char file_buf[65536];
-char dummy[16384];
-char header_string[MAX_HEADER_LEN];
-
-FILE * f_raw;
-FILE * f_mp3;
-
-mpg123_handle *mh = NULL;
-ao_device *dev = NULL;
-
-unsigned int meta_interval;
-
-
-unsigned int int_len;
-unsigned mp3_base;
-int mytime,secs,mins;
-
+pthread_t go_play;
 int fifo_d;
+unsigned char file_buf[32768];
+char header_string[MAX_HEADER_LEN];
+unsigned int meta_interval;
+int mytime,secs,mins;
 
 void sig_handler(int signo)
 {
@@ -48,7 +32,7 @@ close(hSocket);
 shutdown(hSocket,0);
 shutdown(hSocket,1);
 shutdown(hSocket,2);
-printf("Closing mpg123 \n");
+printf("Closing \n");
 
 printf(" QUAT ! \n");
 exit(-1);
@@ -99,7 +83,7 @@ return shortRetval;
 //================================================
 
 
-int parse_icy_header(char * icy_head)
+void parse_icy_header(char * icy_head)
 {
 char * pos;
 char heading[256];
@@ -114,7 +98,6 @@ if(pos > 0 )
     meta_interval = atoi(pos+strlen(heading));
     printf("Meta interval: %d\n ",meta_interval);
     }
-
 
 /*
 pos = strstr(icy_head,"content-type:");
@@ -135,119 +118,62 @@ if(pos > 0 )
     printf("+++ %s \n",pos);
     }
 */
-
 }                    
 
-
-void * playit(void *go_play)
+//This the separate thread for audio play-out
+void * play_id(void *go_play)
 {
-FILE * fred;
+libvlc_instance_t *inst;
+libvlc_media_player_t *mp;
+libvlc_media_t *m;
 
+// load the vlc engine
+inst = libvlc_new(0, NULL);
 
-//int main//(int argc, char **argv)
-{
-    libvlc_instance_t *inst;
-    libvlc_media_player_t *mp;
-    libvlc_media_t *m;
+// create a new item
+m = libvlc_media_new_path(inst, "/dev/shm/mable");
 
-    // load the vlc engine
-    inst = libvlc_new(0, NULL);
+// create a media play playing environment
+mp = libvlc_media_player_new_from_media(m);
 
-fred = fopen("my_log,txt","w");
+// no need to keep the media now
+libvlc_media_release(m);
 
-libvlc_log_set_file(inst,fred);
+libvlc_media_player_play(mp); // play the media_player
 
-    // create a new item
-  m = libvlc_media_new_path(inst, "/dev/shm/mable");
+//I want this to go on for evah and evah
+while(1)
+    sleep(10);
+    
+libvlc_media_player_stop(mp);// stop playing
+libvlc_media_player_release(mp); // free the media_player
 
- // m=libvlc_media_new_location(inst,"http://media-the.musicradio.com/ClassicFM-M-Relax");
-//    m=libvlc_media_new_location(inst,"https://allclassical.streamguys1.com/ac96k");
-    // create a media play playing environment
-    mp = libvlc_media_player_new_from_media(m);
-
-    // no need to keep the media now
-    libvlc_media_release(m);
-
-    // play the media_player
-    libvlc_media_player_play(mp);
-
-        //I want this to go on for evah and evah
-    while(1)
-        sleep(10);
-
-    // stop playing
-    libvlc_media_player_stop(mp);
-
-    // free the media_player
-    libvlc_media_player_release(mp);
-
-    libvlc_release(inst);
-
-
-    return 0;
+libvlc_release(inst);
+return 0;
 }
-
-
-}
-
-
 
 //================================================
 
 int main(int argc, char *argv[])
 {
-//int read_size;
-struct sockaddr_in server;
-//char server_reply[16384] = {0};
 char show_header[2048] = {0};
-char getrequest[4096];
+char getrequest[2048];
 
-
-unsigned int fsize,read_size,end_of_header,nx,header_len;
+unsigned int read_size,nx,header_len;
 unsigned char meta_char;
 unsigned short meta_len;
 
-int debug;
-int count;
 int size;
 int mp3_int;
 
-
-pthread_create(&go_play, NULL, playit, NULL);
-
-//audio vars
-
-int err;
-    off_t frame_offset;
-    unsigned char *audio;
-    size_t done;
-    ao_sample_format format;
-    int channels, encoding;
-    long rate;
-//end audio vars
-
+pthread_create(&go_play, NULL, play_id, NULL);
 
 printf("\n   --- ICY STREAM HARVESTER ---\n");
-execl("ls -l","");
-//execl("../VLC/libvlc/play","");
-
-#ifdef MPG
-ao_initialize();  //sound card access
-mpg123_init();
-mh = mpg123_new(NULL, NULL);
-mpg123_open_feed(mh);
-#endif
-
-
-count = 0;
 
 //fifo setup
 char * myfifo ="/dev/shm/mable";
 mkfifo(myfifo,0666);
 fifo_d = open(myfifo,O_WRONLY);
-
-//logging
-logfd = fopen("classicfm.mp3", "wb");
 
 if (signal(SIGINT, sig_handler) == SIG_ERR)
   printf("\nCan't catch SIGINT\n");
@@ -308,7 +234,7 @@ if((header_buffer[nx  ] == 0x0d ) && (header_buffer[nx+1] == 0x0a ) &&
     {
     nx+=4;
     strncpy(show_header,header_buffer,nx);
-    end_of_header=nx;
+ //   end_of_header=nx;
     header_len = nx;
     printf("Header length: %d\n",nx);
     }
@@ -320,13 +246,8 @@ memset(header_buffer,0,MAX_HEADER_LEN);
 read_size = recv(hSocket,header_buffer,header_len,0); 
 
 printf("\nHEADER RESPONSE:\n%s",header_buffer); 
-
-
 parse_icy_header(header_buffer);
-
-
 printf("NOW go Lupin to rx stream \n");
-
 
 //----
 
@@ -338,46 +259,7 @@ while(1) //Main loop
         {
         size = recv(hSocket,stream_buffer, mp3_int, 0);
         mp3_int -=size;
-#ifdef MPG
- mpg123_feed(mh, (const unsigned char*) stream_buffer, size * 1);
-
-
-
-    do 
-        {
-        err = mpg123_decode_frame(mh, &frame_offset, &audio, &done);
-        switch(err) 
-            {
-            case MPG123_NEW_FORMAT:
-            mpg123_getformat(mh, &rate, &channels, &encoding);
-            format.bits = mpg123_encsize(encoding) * BITS;
-            format.rate = rate;
-            format.channels = channels;
-            format.byte_format = AO_FMT_NATIVE;
-            format.matrix = 0;
-            dev = ao_open_live(ao_default_driver_id(), &format, NULL);
-            break;
-
-            case MPG123_OK:
-            ao_play(dev, audio, done);
-            break;
-
-            case MPG123_NEED_MORE:
-            break;
-
-            default:
-            break;
-            }
-        } while(done > 0);
-
-
-
-
-#else
-
         write(fifo_d,stream_buffer,size);
-#endif
-       // fwrite(stream_buffer, size, 1, logfd); //logging only
         }
     while (mp3_int > 0);
 
@@ -385,8 +267,7 @@ while(1) //Main loop
     size = recv(hSocket,file_buf,1, 0);
     meta_char = file_buf[0]; 
     meta_len = meta_char *16;
-    //printf(" m char: 0x%2.2x m length %d \n",meta_char,meta_len);
-   
+  
     //get the meta-data, if any
     if(meta_interval !=0)
         {
@@ -398,7 +279,7 @@ while(1) //Main loop
         while (meta_len >0);
     
         //just print it for now
-        printf("META-DATA>>>\n %s \n",file_buf);
+        printf("META-DATA>>> %s \n",file_buf);
 
         mytime++;
         secs = mytime/2;
@@ -415,6 +296,5 @@ shutdown(hSocket,0);
 shutdown(hSocket,1);
 shutdown(hSocket,2);
 return 0;
-
 } 
 
