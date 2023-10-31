@@ -7,16 +7,19 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <signal.h>
-#include <unistd.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <vlc/vlc.h>
+#include <pthread.h>
+#include <sys/ioctl.h>
+#include <fcntl.h>
+#include <sys/stat.h> 
 
-
+#define MAX_HEADER_LEN 2048
 
 FILE * fd;
 struct hostent *host;
 int hSocket;
-
 
 //station select
 char host_url[256];
@@ -26,16 +29,17 @@ char myhost[256];
 int myport;
 
 char stream_buffer[32768];
-//char audio_buffer[32768];
-//char meta_buffer[2048];
-//char test_buffer[2048];
 char header_buffer[2048];
 
 
-#define BITS 8
-
-
+pthread_t go_play;
+int fifo_d;
+unsigned char file_buf[32768];
+char header_string[MAX_HEADER_LEN];
+unsigned int meta_interval;
+int mytime,secs,mins;
 void set_station()
+
 {
 #define CFM
 //#define RELAX
@@ -128,12 +132,6 @@ myport = 80;
 //#define METINT 16000
 #endif
 }
-
-
-
-
-
-
 
 
 

@@ -2,4 +2,7 @@
 Simple non-curl HTTP stream manipulation client. 
 This is an experimental Work-In-Progress for educational purposes only.
 
-https://gist.github.com/ePirat/adc3b8ba00d85b7e3870
+Opens Streams from chosen station by direct HTTP and GET Commans - no CURL.
+Extracts Header first, then separates Audio chunks and MetaData strings.
+
+Opens separate thead to play-out through VLC Library. Uses mkfifo to buffer between the two threads. The named Pipe is "Mable" who lives in RAM >>>S "/dev/shm/mable" 

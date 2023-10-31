@@ -1,26 +1,5 @@
 #include "harvest.h"
 //=================
-#include <stdio.h>
-#include <string.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
-#include <ctype.h>
-#include <string.h>
-#include <inttypes.h>
-#include <pthread.h>
-#include <vlc/vlc.h>
-
-#define MAX_HEADER_LEN 2048
-
-pthread_t go_play;
-int fifo_d;
-unsigned char file_buf[32768];
-char header_string[MAX_HEADER_LEN];
-unsigned int meta_interval;
-int mytime,secs,mins;
 
 void sig_handler(int signo)
 {
@@ -99,6 +78,7 @@ if(pos > 0 )
     printf("Meta interval: %d\n ",meta_interval);
     }
 
+//These are other hraders we might want
 /*
 pos = strstr(icy_head,"content-type:");
 if(pos > 0 ) 
@@ -119,6 +99,8 @@ if(pos > 0 )
     }
 */
 }                    
+
+//---
 
 //This the separate thread for audio play-out
 void * play_id(void *go_play)
@@ -254,7 +236,7 @@ printf("NOW go Lupin to rx stream \n");
 while(1) //Main loop
     {
     mp3_int = meta_interval;
-
+    //write the whole block of audio to stream fifo
     do 
         {
         size = recv(hSocket,stream_buffer, mp3_int, 0);
